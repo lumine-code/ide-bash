@@ -116,3 +116,39 @@ describe("ide-bash adapter", () => {
     ]);
   });
 });
+
+describe("ide-bash feature contracts", () => {
+  const features = [
+    "diagnostics",
+    "autocomplete",
+    "hover",
+    "definition",
+    "references",
+    "symbols",
+    "outline",
+    "format",
+    "rename",
+    "codeActions",
+  ];
+  const definitions = require("../package.json").configSchema.features.properties;
+
+  beforeEach(async () => {
+    await lumine.packages.activatePackage("ide-bash");
+  });
+
+  afterEach(async () => {
+    for (const feature of features) lumine.config.unset(`ide-bash.features.${feature}`);
+    await lumine.packages.deactivatePackage("ide-bash");
+  });
+
+  for (const feature of features) {
+    it(`exposes ${feature} as an independent enabled-by-default switch`, () => {
+      expect(definitions[feature].type).toBe("boolean");
+      expect(definitions[feature].default).toBe(true);
+      const keyPath = `ide-bash.features.${feature}`;
+      expect(lumine.config.get(keyPath)).toBe(true);
+      lumine.config.set(keyPath, false);
+      expect(lumine.config.get(keyPath)).toBe(false);
+    });
+  }
+});
