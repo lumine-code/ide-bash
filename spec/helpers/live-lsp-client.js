@@ -51,6 +51,7 @@ const capabilities = () => ({
     signatureHelp: { dynamicRegistration: true },
     definition: { dynamicRegistration: true, linkSupport: true },
     references: { dynamicRegistration: true },
+    documentHighlight: { dynamicRegistration: true },
     documentSymbol: { dynamicRegistration: true, hierarchicalDocumentSymbolSupport: true },
     formatting: { dynamicRegistration: true },
     rangeFormatting: { dynamicRegistration: true },

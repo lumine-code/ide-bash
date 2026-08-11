@@ -117,6 +117,7 @@ process.stdin.on("end", () => process.stdout.write(input.replace("  echo $greeti
     expect(capabilities.hoverProvider).toBe(true);
     expect(capabilities.definitionProvider).toBe(true);
     expect(capabilities.referencesProvider).toBe(true);
+    expect(capabilities.documentHighlightProvider).toBe(true);
     expect(capabilities.documentSymbolProvider).toBe(true);
     expect(capabilities.workspaceSymbolProvider).toBe(true);
     expect(capabilities.documentFormattingProvider).toBe(true);
@@ -139,7 +140,10 @@ process.stdin.on("end", () => process.stdout.write(input.replace("  echo $greeti
     }
 
     const completion = await client.request("textDocument/completion", positionParams(uri, 8, 2));
-    expect(completion.some(({ label }) => label === "greeting")).toBe(true);
+    const greetingCompletion = completion.find(({ label }) => label === "greeting");
+    expect(greetingCompletion).toBeDefined();
+    const resolved = await client.request("completionItem/resolve", greetingCompletion);
+    expect(resolved.label).toBe("greeting");
 
     const hover = await client.request("textDocument/hover", positionParams(uri, 4, 10));
     expect(hover.contents.value).toContain("Greeting shown to users");
@@ -152,6 +156,12 @@ process.stdin.on("end", () => process.stdout.write(input.replace("  echo $greeti
       context: { includeDeclaration: true },
     });
     expect(references.length).toBe(3);
+
+    const highlights = await client.request(
+      "textDocument/documentHighlight",
+      positionParams(uri, 4, 10),
+    );
+    expect(highlights.length).toBe(3);
 
     const symbols = await client.request("textDocument/documentSymbol", {
       textDocument: { uri },
