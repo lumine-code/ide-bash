@@ -1,0 +1,259 @@
+{
+  "name": "ide-bash",
+  "author": "lumine-code",
+  "description": "Bash language-server adapter.",
+  "repository": "https://github.com/lumine-code/ide-bash",
+  "bugs": {
+    "url": "https://github.com/lumine-code/ide-bash/issues"
+  },
+  "keywords": [
+    "language-server",
+    "lsp",
+    "shell-script",
+    "shellcheck",
+    "shfmt",
+    "intellisense"
+  ],
+  "version": "1.0.0",
+  "license": "MIT",
+  "engines": {
+    "lumine": "^1.0.0"
+  },
+  "main": "./lib/main",
+  "files": [
+    "lib",
+    "spec"
+  ],
+  "scripts": {
+    "test": "lumine --test spec",
+    "lint": "eslint . --max-warnings 0",
+    "format": "prettier --write .",
+    "format:check": "prettier --check ."
+  },
+  "consumedServices": {
+    "ide-client": {
+      "versions": {
+        "^1.0.0": "consumeIdeClient"
+      }
+    }
+  },
+  "dependencies": {
+    "@lumine-code/bash-language-server": "github:lumine-code/bash-language-server#97d7e0ed3ff89a98053b3534c2afae587efd084d"
+  },
+  "devDependencies": {
+    "@eslint/js": "^10.0.1",
+    "eslint": "^10.8.0",
+    "eslint-config-prettier": "^10.1.8",
+    "eslint-plugin-n": "^18.2.2",
+    "globals": "^17.9.0",
+    "prettier": "^3.9.6"
+  },
+  "configSchema": {
+    "serverPath": {
+      "title": "Server Path",
+      "description": "Absolute path to a `bash-language-server` executable. Leave empty to use the bundled server.",
+      "type": "string",
+      "default": ""
+    },
+    "features": {
+      "title": "Features",
+      "description": "Which parts of the Bash server the editor uses. Turning one off hands it to the next server serving the same file.",
+      "type": "object",
+      "properties": {
+        "diagnostics": {
+          "title": "Diagnostics",
+          "description": "Report parser and ShellCheck findings in the linter.",
+          "type": "boolean",
+          "default": true
+        },
+        "autocomplete": {
+          "title": "Autocomplete",
+          "description": "Offer variables, functions, executables, builtins, keywords, options and snippets.",
+          "type": "boolean",
+          "default": true
+        },
+        "hover": {
+          "title": "Hover",
+          "description": "Show definitions and command documentation on hover.",
+          "type": "boolean",
+          "default": true
+        },
+        "definition": {
+          "title": "Go To Definition",
+          "description": "Jump to a variable or function declaration.",
+          "type": "boolean",
+          "default": true
+        },
+        "references": {
+          "title": "Find References",
+          "description": "List uses of a variable or function.",
+          "type": "boolean",
+          "default": true
+        },
+        "symbols": {
+          "title": "Symbols",
+          "description": "Serve document and project symbols to go-to-symbol.",
+          "type": "boolean",
+          "default": true
+        },
+        "outline": {
+          "title": "Outline",
+          "description": "Fill the outline panel with variables and functions.",
+          "type": "boolean",
+          "default": true
+        },
+        "format": {
+          "title": "Format",
+          "description": "Format shell scripts with shfmt when it is available.",
+          "type": "boolean",
+          "default": true
+        },
+        "rename": {
+          "title": "Rename",
+          "description": "Rename a variable or function in its resolved scope.",
+          "type": "boolean",
+          "default": true
+        },
+        "codeActions": {
+          "title": "Code Actions",
+          "description": "Offer ShellCheck fixes in the intentions list.",
+          "type": "boolean",
+          "default": true
+        }
+      }
+    },
+    "bashIde": {
+      "title": "Bash Language Server",
+      "description": "Workspace analysis and external tools used by the language server.",
+      "type": "object",
+      "properties": {
+        "backgroundAnalysisMaxFiles": {
+          "title": "Background Analysis Limit",
+          "description": "Maximum workspace files parsed in the background. Set to 0 to disable background analysis.",
+          "type": "integer",
+          "minimum": 0,
+          "default": 500
+        },
+        "globPattern": {
+          "title": "Workspace File Pattern",
+          "description": "Glob used to find shell scripts for cross-file symbols, navigation and completion.",
+          "type": "string",
+          "default": "**/*@(.sh|.inc|.bash|.command)"
+        },
+        "includeAllWorkspaceSymbols": {
+          "title": "All Workspace Symbols",
+          "description": "Include every symbol found in the workspace, rather than only symbols from sourced files.",
+          "type": "boolean",
+          "default": false
+        },
+        "enableSourceErrorDiagnostics": {
+          "title": "Source Error Diagnostics",
+          "description": "Report missing or unreadable sourced files. Ignored when all workspace symbols are included.",
+          "type": "boolean",
+          "default": false
+        },
+        "explainshellEndpoint": {
+          "title": "Explainshell Endpoint",
+          "description": "Explainshell-compatible server used for command-option hover documentation. Leave empty to disable it.",
+          "type": "string",
+          "default": ""
+        },
+        "logLevel": {
+          "title": "Log Level",
+          "description": "Minimum server message severity written to the language-server log.",
+          "type": "string",
+          "enum": [
+            "debug",
+            "info",
+            "warning",
+            "error"
+          ],
+          "default": "info"
+        },
+        "shellcheckPath": {
+          "title": "ShellCheck Path",
+          "description": "ShellCheck executable name or path. Leave empty to disable ShellCheck diagnostics and fixes.",
+          "type": "string",
+          "default": "shellcheck"
+        },
+        "shellcheckExternalSources": {
+          "title": "ShellCheck External Sources",
+          "description": "Let ShellCheck follow source directives. Disable this for projects whose source graph makes ShellCheck consume excessive memory.",
+          "type": "boolean",
+          "default": true
+        },
+        "shellcheckArguments": {
+          "title": "ShellCheck Arguments",
+          "description": "Additional arguments passed to ShellCheck, excluding the shell, output format, and external-sources flags managed by the server.",
+          "type": "array",
+          "items": {
+            "type": "string"
+          },
+          "default": []
+        },
+        "shfmt": {
+          "title": "shfmt",
+          "description": "Executable and formatting style used for document formatting.",
+          "type": "object",
+          "properties": {
+            "path": {
+              "title": "Path",
+              "description": "shfmt executable name or path. Leave empty to disable formatting.",
+              "type": "string",
+              "default": "shfmt"
+            },
+            "ignoreEditorconfig": {
+              "title": "Ignore EditorConfig",
+              "description": "Always use these settings instead of shfmt options from `.editorconfig`.",
+              "type": "boolean",
+              "default": false
+            },
+            "languageDialect": {
+              "title": "Language Dialect",
+              "description": "Shell dialect parsed and formatted by shfmt.",
+              "type": "string",
+              "enum": [
+                "auto",
+                "bash",
+                "posix",
+                "mksh",
+                "bats"
+              ],
+              "default": "auto"
+            },
+            "binaryNextLine": {
+              "title": "Binary Operators On Next Line",
+              "description": "Allow `&&` and `||` to begin a continuation line.",
+              "type": "boolean",
+              "default": false
+            },
+            "caseIndent": {
+              "title": "Indent Case Patterns",
+              "description": "Indent patterns inside case statements.",
+              "type": "boolean",
+              "default": false
+            },
+            "funcNextLine": {
+              "title": "Function Brace On Next Line",
+              "description": "Place a function's opening brace on a separate line.",
+              "type": "boolean",
+              "default": false
+            },
+            "simplifyCode": {
+              "title": "Simplify Code",
+              "description": "Apply shfmt's safe simplifications while formatting.",
+              "type": "boolean",
+              "default": false
+            },
+            "spaceRedirects": {
+              "title": "Space Redirects",
+              "description": "Put a space after redirection operators.",
+              "type": "boolean",
+              "default": false
+            }
+          }
+        }
+      }
+    }
+  }
+}
