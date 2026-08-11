@@ -1,0 +1,112 @@
+{
+  "name": "ide-bash full feature matrix",
+  "adapter": "ide-bash",
+  "project": "fixtures/drive",
+  "file": "fixtures/drive/fixture.sh",
+  "grammarScope": "source.shell",
+  "config": {
+    "ide-bash.bashIde.shellcheckPath": "",
+    "ide-bash.bashIde.shfmt.path": "",
+    "ide-bash.bashIde.includeAllWorkspaceSymbols": true
+  },
+  "checks": [
+    {
+      "name": "diagnostics route",
+      "kind": "diagnostics",
+      "expect": { "type": "array" }
+    },
+    {
+      "name": "completion",
+      "method": "textDocument/completion",
+      "position": [8, 2],
+      "params": { "context": { "triggerKind": 1 } },
+      "expect": { "path": "*.label", "includes": "greeting" }
+    },
+    {
+      "name": "completion resolve",
+      "method": "completionItem/resolve",
+      "document": false,
+      "paramsFrom": {
+        "$": {
+          "check": "completion",
+          "path": "$",
+          "find": { "path": "label", "equals": "greeting" }
+        }
+      },
+      "expect": { "path": "label", "equals": "greeting" }
+    },
+    {
+      "name": "hover",
+      "method": "textDocument/hover",
+      "position": [4, 10],
+      "expect": { "path": "contents.value", "matches": "Greeting shown to users" }
+    },
+    {
+      "name": "definition",
+      "method": "textDocument/definition",
+      "position": [4, 10],
+      "expect": { "path": "*.range.start.line", "includes": 2 }
+    },
+    {
+      "name": "references",
+      "method": "textDocument/references",
+      "position": [4, 10],
+      "params": { "context": { "includeDeclaration": true } },
+      "expect": { "type": "array", "minLength": 3 }
+    },
+    {
+      "name": "document highlights",
+      "method": "textDocument/documentHighlight",
+      "position": [4, 10],
+      "expect": { "type": "array", "minLength": 3 }
+    },
+    {
+      "name": "document symbols",
+      "method": "textDocument/documentSymbol",
+      "expect": { "path": "*.name", "includes": "show_message" }
+    },
+    {
+      "name": "workspace symbols",
+      "method": "workspace/symbol",
+      "document": false,
+      "params": { "query": "show" },
+      "expect": { "path": "*.name", "includes": "show_message" }
+    },
+    {
+      "name": "formatting route",
+      "method": "textDocument/formatting",
+      "params": { "options": { "tabSize": 2, "insertSpaces": true } },
+      "expect": { "type": "null" }
+    },
+    {
+      "name": "prepare rename",
+      "method": "textDocument/prepareRename",
+      "position": [4, 10],
+      "expect": { "path": "start.character", "equals": 8 }
+    },
+    {
+      "name": "rename",
+      "method": "textDocument/rename",
+      "position": [4, 10],
+      "params": { "newName": "salutation" },
+      "expect": { "path": "changes", "type": "object", "minLength": 1 }
+    },
+    {
+      "name": "code actions route",
+      "method": "textDocument/codeAction",
+      "params": {
+        "range": {
+          "start": { "line": 0, "character": 0 },
+          "end": { "line": 0, "character": 0 }
+        },
+        "context": { "diagnostics": [] }
+      },
+      "expect": { "type": "array" }
+    },
+    {
+      "name": "restart lifecycle",
+      "kind": "restart",
+      "expect": { "path": "current", "equals": "running" }
+    }
+  ]
+}
