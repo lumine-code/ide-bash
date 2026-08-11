@@ -33,6 +33,11 @@ describe("ide-bash server resolution", () => {
     expect(metadata.name).toBe("@lumine-code/bash-language-server");
     expect(metadata.version).toBe("6.0.0");
     expect(metadata.dependencies.editorconfig).toBe("3.0.2");
+    expect(
+      fs.existsSync(
+        require.resolve("@lumine-code/bash-language-server/server/tree-sitter-bash.wasm"),
+      ),
+    ).toBe(true);
   });
 });
 

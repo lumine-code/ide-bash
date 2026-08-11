@@ -38,7 +38,7 @@
     }
   },
   "dependencies": {
-    "@lumine-code/bash-language-server": "github:lumine-code/bash-language-server#97d7e0ed3ff89a98053b3534c2afae587efd084d"
+    "@lumine-code/bash-language-server": "github:lumine-code/bash-language-server#92e2129a4a7a11a89b42d3f979cfc07f06f5f570"
   },
   "devDependencies": {
     "@eslint/js": "^10.0.1",
@@ -46,7 +46,8 @@
     "eslint-config-prettier": "^10.1.8",
     "eslint-plugin-n": "^18.2.2",
     "globals": "^17.9.0",
-    "prettier": "^3.9.6"
+    "prettier": "^3.9.6",
+    "vscode-jsonrpc": "^9.0.1"
   },
   "configSchema": {
     "serverPath": {
