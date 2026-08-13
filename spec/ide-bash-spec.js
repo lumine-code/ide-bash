@@ -1,5 +1,11 @@
 const fs = require("fs");
-const { resolveServer } = require("../lib/server");
+const {
+  resolveServer,
+  installServer,
+  toolPaths,
+  shellcheckAsset,
+  shfmtAsset,
+} = require("../lib/server");
 const main = require("../lib/main");
 
 const registerAdapter = () => {
@@ -38,6 +44,86 @@ describe("ide-bash server resolution", () => {
         require.resolve("@lumine-code/bash-language-server/server/tree-sitter-bash.wasm"),
       ),
     ).toBe(true);
+  });
+
+  it("prefers a managed install over the bundled server", async () => {
+    const managed = { modulePath: "/managed/cli.js", version: "9.9.9" };
+    const launch = await resolveServer("", "info", managed);
+    expect(launch.args[0]).toBe(managed.modulePath);
+    expect(launch.version).toBe("9.9.9");
+    expect((await resolveServer(process.execPath, "info", managed)).command).toBe(process.execPath);
+  });
+
+  it("names the exact shellcheck asset for each platform", () => {
+    // shellcheck ships a .tar.gz beside every .tar.xz, so nothing needs xz.
+    expect(shellcheckAsset({ platform: "linux", arch: "x64", version: "0.11.0" })).toBe(
+      "shellcheck-v0.11.0.linux.x86_64.tar.gz",
+    );
+    expect(shellcheckAsset({ platform: "darwin", arch: "arm64", version: "0.11.0" })).toBe(
+      "shellcheck-v0.11.0.darwin.aarch64.tar.gz",
+    );
+    // One zip covers every Windows architecture.
+    expect(shellcheckAsset({ platform: "win32", arch: "x64", version: "0.11.0" })).toBe(
+      "shellcheck-v0.11.0.zip",
+    );
+    expect(shellcheckAsset({ platform: "aix", arch: "ppc64", version: "0.11.0" })).toBeNull();
+  });
+
+  it("names the exact shfmt asset for each platform", () => {
+    expect(shfmtAsset({ platform: "linux", arch: "x64", version: "3.13.1" })).toBe(
+      "shfmt_v3.13.1_linux_amd64",
+    );
+    expect(shfmtAsset({ platform: "win32", arch: "x64", version: "3.13.1" })).toBe(
+      "shfmt_v3.13.1_windows_amd64.exe",
+    );
+    expect(shfmtAsset({ platform: "aix", arch: "ppc64", version: "3.13.1" })).toBeNull();
+  });
+
+  it("reports no tools until something is installed", () => {
+    expect(toolPaths(null)).toEqual({ shellcheck: null, shfmt: null });
+    const tools = toolPaths({ directory: "/inst" });
+    expect(tools.shellcheck).toContain("tools");
+    expect(tools.shfmt).toContain("tools");
+  });
+
+  it("fetches the server and both tools it shells out to", async () => {
+    // The descriptor is one-server-per-adapter, so this shape needs the hook.
+    const calls = [];
+    const storagePath = fs.mkdtempSync(require("path").join(require("os").tmpdir(), "bash-"));
+    const api = {
+      setServerInstallationStatus: (status) => calls.push(["status", status]),
+      npmPackageLatestVersion: async () => "5.6.0",
+      npmInstallPackage: async (name, version) => calls.push(["npm", name, version]),
+      latestGithubRelease: async (repo) => ({
+        version: repo === "koalaman/shellcheck" ? "0.11.0" : "3.13.1",
+        tag: "v1",
+        assets: [
+          {
+            name: shfmtAsset({ platform: process.platform, arch: process.arch, version: "3.13.1" }),
+            url: "https://x/shfmt",
+            size: 1,
+          },
+        ],
+      }),
+      downloadFile: async (url, destination) => {
+        calls.push(["download", url]);
+        fs.writeFileSync(destination, "x");
+        return destination;
+      },
+      makeFileExecutable: async () => {},
+    };
+
+    const result = await installServer({ storagePath, api });
+
+    expect(result.version).toBe("5.6.0");
+    expect(result.module).toContain("bash-language-server");
+    // The server through npm so its dependency tree comes with it, and shfmt as
+    // a raw executable; shellcheck publishes no matching asset in this stub.
+    expect(calls).toContain(jasmine.arrayContaining(["npm", "@lumine-code/bash-language-server"]));
+    expect(calls.some(([kind, url]) => kind === "download" && url === "https://x/shfmt")).toBe(
+      true,
+    );
+    fs.rmSync(storagePath, { recursive: true, force: true });
   });
 });
 

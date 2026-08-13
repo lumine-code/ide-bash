@@ -7,6 +7,7 @@ Registers the maintained [@lumine-code/bash-language-server](https://github.com/
 ## Features
 
 - **Bundled server**: pins the audited lumine-code fork to an immutable commit, with an optional custom executable path.
+- **Managed install**: fetches a newer server together with `shellcheck` and `shfmt`, so diagnostics and formatting work without hunting down either tool; a path you set yourself always wins.
 - **Shell intelligence**: completes variables, functions, executables, builtins, keywords, options, and snippets.
 - **Workspace analysis**: follows sourced files or indexes a configurable set of scripts for cross-file symbols and navigation.
 - **ShellCheck**: reports diagnostics and offers quick fixes when the separately installed executable is available, with control over external-source traversal.
