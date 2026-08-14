@@ -17,11 +17,11 @@ Registers the maintained [@lumine-code/bash-language-server](https://github.com/
 
 ## Installation
 
-To install `ide-bash` search for _ide-bash_ in the Install pane of the Lumine settings or run `lumine --install lumine-code/ide-bash`. Install `shellcheck` for diagnostics and fixes, and `shfmt` for formatting; the language server discovers both on PATH by default.
+To install `ide-bash` search for it in the Install pane of the Lumine settings, or run the command `lumine --install lumine-code/ide-bash`. Install `shellcheck` for diagnostics and fixes, and `shfmt` for formatting; the language server discovers both on PATH by default.
 
 ## Services
 
-- **ide-client** (`^1.0.0`): consumed to register the Bash adapter with the editor's language-server client.
+- `ide-client`: consumed to register the Bash adapter with the editor's language-server client.
 
 ## Contributing
 
