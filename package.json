@@ -99,14 +99,7 @@
         },
         "symbols": {
           "title": "Symbols",
-          "description": "Serve document and project symbols to go-to-symbol.",
-          "scopeResolution": "grammar",
-          "type": "boolean",
-          "default": true
-        },
-        "outline": {
-          "title": "Outline",
-          "description": "Fill the outline panel with variables and functions.",
+          "description": "Serve document and project symbols to navigation features.",
           "scopeResolution": "grammar",
           "type": "boolean",
           "default": true
