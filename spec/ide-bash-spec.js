@@ -145,6 +145,7 @@ describe("ide-bash adapter", () => {
     expect(adapter.id).toBe("ide-bash");
     expect(adapter.grammarScopes).toEqual(["source.shell"]);
     expect(adapter.settingsKeyPaths).toEqual(["ide-bash"]);
+    expect(adapter.restartKeyPaths).toEqual(["ide-bash.serverPath", "ide-bash.bashIde.logLevel"]);
     const launch = await adapter.resolveServer({ rootPath: __dirname });
     expect(launch.cwd).toBe(__dirname);
     expect(launch.transport).toBe("stdio");
