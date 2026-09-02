@@ -38,7 +38,7 @@
     }
   },
   "dependencies": {
-    "@lumine-code/bash-language-server": "github:lumine-code/bash-language-server#0b751caafdce309d3c4db68b0c72da063a10b20a"
+    "@lumine-code/bash-language-server": "github:lumine-code/bash-language-server#e22973f2a055d6958bec655ac7828609c5a278ab"
   },
   "devDependencies": {
     "@eslint/js": "^10.0.1",
