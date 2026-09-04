@@ -50,7 +50,7 @@ jobs:
             if ! grep -Eqi 'audit endpoint returned an error|network timeout|EAI_AGAIN|ECONNRESET|ETIMEDOUT|429 Too Many Requests|503 Service Unavailable' <<<"$output"; then exit "$status"; fi
             if [ "$attempt" -lt 5 ]; then sleep "$((attempt * 2))"; fi
           done
-          exit "$status"
+          printf '::warning::npm advisory endpoint remained unavailable after five attempts; dependency audit could not run.\n'
       - name: Lint
         run: npm run lint
       - name: Check formatting
