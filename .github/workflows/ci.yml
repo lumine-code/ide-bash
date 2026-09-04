@@ -35,7 +35,7 @@ jobs:
           node-version: ${{ matrix.node }}
           cache: npm
       - name: Install dependencies
-        run: npm ci --ignore-scripts
+        run: npm ci --ignore-scripts --no-audit
       - name: Audit dependencies
         # The lockfile audit is platform-independent; one matrix copy is enough.
         if: matrix.os == 'macos-latest'
@@ -85,11 +85,11 @@ jobs:
         run: git config --global url."https://github.com/".insteadOf "ssh://git@github.com/"
       - name: Install package dependencies
         working-directory: ide-bash
-        run: npm ci --ignore-scripts
+        run: npm ci --ignore-scripts --no-audit
       - name: Install editor dependencies
         working-directory: lumine
         run: |
-          install() { npm ci --ignore-scripts; }
+          install() { npm ci --ignore-scripts --no-audit; }
           install || install || install
       - name: Download the Electron binary
         working-directory: lumine
