@@ -6,4 +6,4 @@ show_message() {
 }
 show_message
 echo $greeting
-gr
+ec

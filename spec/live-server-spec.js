@@ -91,6 +91,8 @@ process.stdin.on("data", (chunk) => (input += chunk));
 process.stdin.on("end", () => process.stdout.write(input.replace("  echo $greeting", "    echo $greeting")));
 `,
     );
+    lumine.config.set("ide-bash.bashIde.shellcheckEnabled", canRunFixtureTools);
+    lumine.config.set("ide-bash.bashIde.shfmt.enabled", canRunFixtureTools);
     lumine.config.set("ide-bash.bashIde.shellcheckPath", canRunFixtureTools ? shellcheck : "");
     lumine.config.set("ide-bash.bashIde.shfmt.path", canRunFixtureTools ? shfmt : "");
     lumine.config.set("ide-bash.bashIde.includeAllWorkspaceSymbols", true);

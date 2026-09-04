@@ -175,11 +175,17 @@
           ],
           "default": "info"
         },
+        "shellcheckEnabled": {
+          "title": "ShellCheck",
+          "description": "Run ShellCheck diagnostics and fixes. The Diagnostics feature switch still controls which editor receives them.",
+          "type": "boolean",
+          "default": true
+        },
         "shellcheckPath": {
           "title": "ShellCheck Path",
-          "description": "ShellCheck executable name or path. Leave empty to disable ShellCheck diagnostics and fixes.",
+          "description": "ShellCheck executable name or path. Leave empty to use the managed copy when installed, then search PATH.",
           "type": "string",
-          "default": "shellcheck"
+          "default": ""
         },
         "shellcheckExternalSources": {
           "title": "ShellCheck External Sources",
@@ -201,11 +207,17 @@
           "description": "Executable and formatting style used for document formatting.",
           "type": "object",
           "properties": {
+            "enabled": {
+              "title": "Enabled",
+              "description": "Run shfmt document formatting. The Format feature switch still controls which editor uses it.",
+              "type": "boolean",
+              "default": true
+            },
             "path": {
               "title": "Path",
-              "description": "shfmt executable name or path. Leave empty to disable formatting.",
+              "description": "shfmt executable name or path. Leave empty to use the managed copy when installed, then search PATH.",
               "type": "string",
-              "default": "shfmt"
+              "default": ""
             },
             "ignoreEditorconfig": {
               "title": "Ignore EditorConfig",

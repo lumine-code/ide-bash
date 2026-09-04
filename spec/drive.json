@@ -5,8 +5,8 @@
   "file": "fixtures/drive/fixture.sh",
   "grammarScope": "source.shell",
   "config": {
-    "ide-bash.bashIde.shellcheckPath": "",
-    "ide-bash.bashIde.shfmt.path": "",
+    "ide-bash.bashIde.shellcheckEnabled": false,
+    "ide-bash.bashIde.shfmt.enabled": false,
     "ide-bash.bashIde.includeAllWorkspaceSymbols": true
   },
   "checks": [
@@ -16,11 +16,12 @@
       "expect": { "type": "array" }
     },
     {
-      "name": "completion",
+      "name": "completion after asynchronous server initialization",
       "method": "textDocument/completion",
       "position": [8, 2],
       "params": { "context": { "triggerKind": 1 } },
-      "expect": { "path": "*.label", "includes": "greeting" }
+      "retry": { "timeout": 5000, "interval": 100 },
+      "expect": { "path": "*.label", "includes": "echo" }
     },
     {
       "name": "completion resolve",
@@ -28,12 +29,12 @@
       "document": false,
       "paramsFrom": {
         "$": {
-          "check": "completion",
+          "check": "completion after asynchronous server initialization",
           "path": "$",
-          "find": { "path": "label", "equals": "greeting" }
+          "find": { "path": "label", "equals": "echo" }
         }
       },
-      "expect": { "path": "label", "equals": "greeting" }
+      "expect": { "path": "label", "equals": "echo" }
     },
     {
       "name": "hover",

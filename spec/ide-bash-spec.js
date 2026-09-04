@@ -2,6 +2,8 @@ const fs = require("fs");
 const {
   resolveServer,
   installServer,
+  latestServerVersion,
+  toolchainVersion,
   toolPaths,
   shellcheckAsset,
   shfmtAsset,
@@ -46,11 +48,14 @@ describe("ide-bash server resolution", () => {
     ).toBe(true);
   });
 
-  it("prefers a managed install over the bundled server", async () => {
+  it("keeps the bundled server when a managed toolchain is installed", async () => {
     const managed = { modulePath: "/managed/cli.js", version: "9.9.9" };
     const launch = await resolveServer("", "info", managed);
-    expect(launch.args[0]).toBe(managed.modulePath);
-    expect(launch.version).toBe("9.9.9");
+    expect(launch.args[0]).not.toBe(managed.modulePath);
+    expect(launch.args[0]).toBe(
+      require.resolve("@lumine-code/bash-language-server/server/out/cli.js"),
+    );
+    expect(launch.version).toBe("6.0.0");
     expect((await resolveServer(process.execPath, "info", managed)).command).toBe(process.execPath);
   });
 
@@ -86,43 +91,94 @@ describe("ide-bash server resolution", () => {
     expect(tools.shfmt).toContain("tools");
   });
 
-  it("fetches the server and both tools it shells out to", async () => {
-    // The descriptor is one-server-per-adapter, so this shape needs the hook.
+  it("fetches and verifies both managed tools without inventing a server package", async () => {
     const calls = [];
     const storagePath = fs.mkdtempSync(require("path").join(require("os").tmpdir(), "bash-"));
+    const releaseFor = (repo) => {
+      const shellcheck = repo === "koalaman/shellcheck";
+      const version = shellcheck ? "0.11.0" : "3.13.1";
+      const name = shellcheck
+        ? shellcheckAsset({ platform: process.platform, arch: process.arch, version })
+        : shfmtAsset({ platform: process.platform, arch: process.arch, version });
+      return {
+        version,
+        tag: `v${version}`,
+        assets: [
+          { name, url: `https://x/${shellcheck ? "shellcheck" : "shfmt"}`, digest: "sha256:abc" },
+        ],
+      };
+    };
     const api = {
       setServerInstallationStatus: (status) => calls.push(["status", status]),
-      npmPackageLatestVersion: async () => "5.6.0",
-      npmInstallPackage: async (name, version) => calls.push(["npm", name, version]),
-      latestGithubRelease: async (repo) => ({
-        version: repo === "koalaman/shellcheck" ? "0.11.0" : "3.13.1",
-        tag: "v1",
-        assets: [
-          {
-            name: shfmtAsset({ platform: process.platform, arch: process.arch, version: "3.13.1" }),
-            url: "https://x/shfmt",
-            size: 1,
-          },
-        ],
-      }),
-      downloadFile: async (url, destination) => {
-        calls.push(["download", url]);
-        fs.writeFileSync(destination, "x");
+      latestGithubRelease: async (repo) => releaseFor(repo),
+      githubReleaseByTag: async (repo, tag) => {
+        calls.push(["release", repo, tag]);
+        return releaseFor(repo);
+      },
+      downloadFile: async (url, destination, options = {}) => {
+        calls.push(["download", url, options]);
+        if (url.endsWith("/shellcheck")) {
+          const nested = require("path").join(destination, "release");
+          fs.mkdirSync(nested, { recursive: true });
+          fs.writeFileSync(
+            require("path").join(
+              nested,
+              process.platform === "win32" ? "shellcheck.exe" : "shellcheck",
+            ),
+            "x",
+          );
+        } else {
+          fs.writeFileSync(destination, "x");
+        }
         return destination;
       },
       makeFileExecutable: async () => {},
     };
 
-    const result = await installServer({ storagePath, api });
+    const version = await latestServerVersion(api);
+    expect(version).toBe("0.11.0.3.13.1");
+    expect(
+      toolchainVersion({ shellcheck: { version: "0.11.0" }, shfmt: { version: "3.13.1" } }),
+    ).toBe(version);
+    const result = await installServer({ storagePath, version, api });
 
-    expect(result.version).toBe("5.6.0");
-    expect(result.module).toContain("bash-language-server");
-    // The server through npm so its dependency tree comes with it, and shfmt as
-    // a raw executable; shellcheck publishes no matching asset in this stub.
-    expect(calls).toContain(jasmine.arrayContaining(["npm", "@lumine-code/bash-language-server"]));
-    expect(calls.some(([kind, url]) => kind === "download" && url === "https://x/shfmt")).toBe(
-      true,
+    expect(result).toEqual({
+      version,
+      tools: { shellcheck: "0.11.0", shfmt: "3.13.1" },
+    });
+    expect(calls).toContain(["release", "koalaman/shellcheck", "v0.11.0"]);
+    expect(calls).toContain(["release", "mvdan/sh", "v3.13.1"]);
+    const downloads = calls.filter(([kind]) => kind === "download");
+    expect(downloads).toHaveSize(2);
+    expect(downloads.every(([, , options]) => options.digest === "sha256:abc")).toBe(true);
+    expect(downloads.find(([, url]) => url.endsWith("/shellcheck"))[2].type).toBe(
+      process.platform === "win32" ? "zip" : "gzip-tar",
     );
+    fs.rmSync(storagePath, { recursive: true, force: true });
+  });
+
+  it("fails closed when a required tool asset or digest is missing", async () => {
+    const storagePath = fs.mkdtempSync(require("path").join(require("os").tmpdir(), "bash-"));
+    const release = (repo) => ({
+      version: repo === "koalaman/shellcheck" ? "0.11.0" : "3.13.1",
+      assets: [],
+    });
+    const api = {
+      setServerInstallationStatus() {},
+      latestGithubRelease: async (repo) => release(repo),
+    };
+    await expectAsync(installServer({ storagePath, api })).toBeRejectedWithError(/release asset/);
+
+    const shellcheckName = shellcheckAsset({
+      platform: process.platform,
+      arch: process.arch,
+      version: "0.11.0",
+    });
+    api.latestGithubRelease = async (repo) => ({
+      version: repo === "koalaman/shellcheck" ? "0.11.0" : "3.13.1",
+      assets: [{ name: shellcheckName, url: "https://x/tool" }],
+    });
+    await expectAsync(installServer({ storagePath, api })).toBeRejectedWithError(/digest/);
     fs.rmSync(storagePath, { recursive: true, force: true });
   });
 });
@@ -134,6 +190,7 @@ describe("ide-bash adapter", () => {
   beforeEach(async () => {
     await lumine.packages.activatePackage("ide-bash");
     ({ adapter, disposable } = registerAdapter());
+    await adapter.resolveServer({ rootPath: __dirname, managedServer: null });
   });
 
   afterEach(async () => {
@@ -146,6 +203,8 @@ describe("ide-bash adapter", () => {
     expect(adapter.grammarScopes).toEqual(["source.shell"]);
     expect(adapter.settingsKeyPaths).toEqual(["ide-bash"]);
     expect(adapter.restartKeyPaths).toEqual(["ide-bash.serverPath", "ide-bash.bashIde.logLevel"]);
+    expect(adapter.bundledServer).toBe(true);
+    expect(adapter.managedServerDisplayName).toBe("Bash Toolchain");
     const launch = await adapter.resolveServer({ rootPath: __dirname });
     expect(launch.cwd).toBe(__dirname);
     expect(launch.transport).toBe("stdio");
@@ -164,7 +223,7 @@ describe("ide-bash adapter", () => {
     expect(adapter.getWorkspaceConfiguration("editor")).toBeUndefined();
   });
 
-  it("maps diagnostics and formatting switches onto their external tools", () => {
+  it("leaves external tools available for grammar-scoped feature overrides", () => {
     expect(adapter.getSettings().bashIde.shellcheckPath).toBe("shellcheck");
     expect(adapter.getSettings().bashIde.shfmt.path).toBe("shfmt");
 
@@ -172,7 +231,21 @@ describe("ide-bash adapter", () => {
     lumine.config.set("ide-bash.features.format", false);
     const settings = adapter.getSettings().bashIde;
     expect(settings.enableSourceErrorDiagnostics).toBe(false);
-    expect(settings.shellcheckPath).toBe("");
+    expect(settings.shellcheckPath).toBe("shellcheck");
+    expect(settings.shfmt.path).toBe("shfmt");
+  });
+
+  it("prefers managed tools by default and preserves explicit paths or disablement", async () => {
+    const managed = { directory: require("path").join(__dirname, "managed"), version: "1.0.0" };
+    await adapter.resolveServer({ rootPath: __dirname, managedServer: managed });
+    let settings = adapter.getSettings().bashIde;
+    expect(settings.shellcheckPath).toBe(toolPaths(managed).shellcheck);
+    expect(settings.shfmt.path).toBe(toolPaths(managed).shfmt);
+
+    lumine.config.set("ide-bash.bashIde.shellcheckPath", "/custom/shellcheck");
+    lumine.config.set("ide-bash.bashIde.shfmt.enabled", false);
+    settings = adapter.getSettings().bashIde;
+    expect(settings.shellcheckPath).toBe("/custom/shellcheck");
     expect(settings.shfmt.path).toBe("");
   });
 
