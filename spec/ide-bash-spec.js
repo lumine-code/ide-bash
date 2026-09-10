@@ -39,7 +39,7 @@ describe("ide-bash server resolution", () => {
     expect(launch.env.ELECTRON_RUN_AS_NODE).toBe("1");
     const metadata = require("@lumine-code/bash-language-server/package.json");
     expect(metadata.name).toBe("@lumine-code/bash-language-server");
-    expect(metadata.version).toBe("6.0.0");
+    expect(launch.version).toBe(metadata.version);
     expect(metadata.dependencies.editorconfig).toBe("3.0.2");
     expect(
       fs.existsSync(
@@ -55,7 +55,7 @@ describe("ide-bash server resolution", () => {
     expect(launch.args[0]).toBe(
       require.resolve("@lumine-code/bash-language-server/server/out/cli.js"),
     );
-    expect(launch.version).toBe("6.0.0");
+    expect(launch.version).toBe(require("@lumine-code/bash-language-server/package.json").version);
     expect((await resolveServer(process.execPath, "info", managed)).command).toBe(process.execPath);
   });
 
