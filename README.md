@@ -21,6 +21,10 @@ To install `ide-bash` search for it in the Install pane of the Lumine settings, 
 
 Install `ide-client` first. Install ShellCheck and shfmt yourself or use IDE Client's managed-server view; explicitly configured paths take precedence.
 
+## Usage
+
+The managed ShellCheck and shfmt tools are used with the bundled server. A custom server uses explicitly configured tools or the executables on PATH, so its startup does not depend on the managed toolchain.
+
 ## Services
 
 - `ide-client`: consumed to register the Bash adapter with the editor's language-server client.

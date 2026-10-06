@@ -344,6 +344,51 @@ describe("ide-bash feature contracts", () => {
 });
 
 describe("ide-bash shared server resolution", () => {
+  describe("managed toolchain priority", () => {
+    let adapter;
+    let disposable;
+
+    beforeEach(async () => {
+      const current = await lumine.packages.activatePackage("ide-bash");
+      disposable = current.mainModule.consumeIdeClient({
+        registerAdapter(registered) {
+          adapter = registered;
+          return { dispose() {} };
+        },
+      });
+    });
+
+    afterEach(async () => {
+      lumine.config.unset("ide-bash.serverPath");
+      disposable.dispose();
+      await lumine.packages.deactivatePackage("ide-bash");
+    });
+
+    it("uses the configured server without reading an invalid managed toolchain", async () => {
+      const getManagedServer = jasmine
+        .createSpy("getManagedServer")
+        .and.throwError("The managed installation is corrupt.");
+      lumine.config.set("ide-bash.serverPath", process.execPath);
+      const launch = await adapter.resolveServer(
+        serverContext({ rootPath: __dirname, getManagedServer }),
+      );
+      expect(launch.command).toBe(process.execPath);
+      expect(getManagedServer).not.toHaveBeenCalled();
+      expect(adapter.getSettings({ launch }).bashIde.shellcheckPath).toBe("shellcheck");
+      expect(adapter.getSettings({ launch }).bashIde.shfmt.path).toBe("shfmt");
+    });
+
+    it("reports an invalid toolchain when launching the bundled server", async () => {
+      const getManagedServer = jasmine
+        .createSpy("getManagedServer")
+        .and.throwError("The managed installation is corrupt.");
+      await expectAsync(
+        adapter.resolveServer(serverContext({ rootPath: __dirname, getManagedServer })),
+      ).toBeRejectedWithError("The managed installation is corrupt.");
+      expect(getManagedServer).toHaveBeenCalledOnceWith();
+    });
+  });
+
   it("preserves an unavailable selection as null", async () => {
     const { resolveServer: resolveWithContext } = require("../lib/server");
     const resolver = { select: jasmine.createSpy("select").and.resolveTo(null) };
