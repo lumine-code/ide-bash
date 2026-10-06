@@ -215,12 +215,12 @@ describe("ide-bash adapter", () => {
     lumine.config.set("ide-bash.bashIde.includeAllWorkspaceSymbols", true);
     lumine.config.set("ide-bash.bashIde.shellcheckArguments", ["--severity=warning"]);
 
-    const settings = adapter.getWorkspaceConfiguration("bashIde");
+    const settings = adapter.getSettings().bashIde;
     expect(settings.backgroundAnalysisMaxFiles).toBe(120);
     expect(settings.includeAllWorkspaceSymbols).toBe(true);
     expect(settings.shellcheckArguments).toEqual(["--severity=warning"]);
     expect(settings.shellcheckExternalSources).toBe(true);
-    expect(adapter.getWorkspaceConfiguration("editor")).toBeUndefined();
+    expect(adapter.getWorkspaceConfiguration).toBeUndefined();
   });
 
   it("leaves external tools available for grammar-scoped feature overrides", () => {
@@ -237,16 +237,34 @@ describe("ide-bash adapter", () => {
 
   it("prefers managed tools by default and preserves explicit paths or disablement", async () => {
     const managed = { directory: require("path").join(__dirname, "managed"), version: "1.0.0" };
-    await adapter.resolveServer({ rootPath: __dirname, managedServer: managed });
-    let settings = adapter.getSettings().bashIde;
+    const launch = await adapter.resolveServer({ rootPath: __dirname, managedServer: managed });
+    let settings = adapter.getSettings({ launch }).bashIde;
     expect(settings.shellcheckPath).toBe(toolPaths(managed).shellcheck);
     expect(settings.shfmt.path).toBe(toolPaths(managed).shfmt);
 
     lumine.config.set("ide-bash.bashIde.shellcheckPath", "/custom/shellcheck");
     lumine.config.set("ide-bash.bashIde.shfmt.enabled", false);
-    settings = adapter.getSettings().bashIde;
+    settings = adapter.getSettings({ launch }).bashIde;
     expect(settings.shellcheckPath).toBe("/custom/shellcheck");
     expect(settings.shfmt.path).toBe("");
+  });
+
+  it("keeps tool paths with their launch across concurrent resolutions and service edges", async () => {
+    const managed = { directory: require("path").join(__dirname, "managed") };
+    const installed = await adapter.resolveServer({ rootPath: __dirname, managedServer: managed });
+    const fallback = await adapter.resolveServer({ rootPath: __dirname, managedServer: null });
+    const second = registerAdapter();
+    try {
+      expect(adapter.getSettings({ launch: installed }).bashIde.shellcheckPath).toBe(
+        toolPaths(managed).shellcheck,
+      );
+      expect(adapter.getSettings({ launch: fallback }).bashIde.shellcheckPath).toBe("shellcheck");
+      expect(second.adapter.getSettings({ launch: installed }).bashIde.shellcheckPath).toBe(
+        "shellcheck",
+      );
+    } finally {
+      second.disposable.dispose();
+    }
   });
 
   it("transcribes shfmt settings", () => {
@@ -254,7 +272,7 @@ describe("ide-bash adapter", () => {
     lumine.config.set("ide-bash.bashIde.shfmt.caseIndent", true);
     lumine.config.set("ide-bash.bashIde.shfmt.simplifyCode", true);
 
-    const { shfmt } = adapter.getWorkspaceConfiguration("bashIde");
+    const { shfmt } = adapter.getSettings().bashIde;
     expect(shfmt.languageDialect).toBe("posix");
     expect(shfmt.caseIndent).toBe(true);
     expect(shfmt.simplifyCode).toBe(true);

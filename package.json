@@ -24,6 +24,9 @@
     "lib",
     "spec"
   ],
+  "specPackages": [
+    "ide-client"
+  ],
   "scripts": {
     "test": "lumine --test spec",
     "lint": "eslint . --max-warnings 0",
@@ -38,7 +41,7 @@
     }
   },
   "dependencies": {
-    "@lumine-code/bash-language-server": "github:lumine-code/bash-language-server#2030ea17402cc1da0735204c5151de2a5f13f1e0"
+    "@lumine-code/bash-language-server": "github:lumine-code/bash-language-server#feb55c3c32c3ee5e498af43f0d958eccf666adeb"
   },
   "devDependencies": {
     "@eslint/js": "^10.0.1",
