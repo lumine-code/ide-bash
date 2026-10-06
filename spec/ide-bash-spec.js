@@ -1,6 +1,7 @@
+const { serverContext } = require("./helpers/server-context");
 const fs = require("fs");
 const {
-  resolveServer,
+  resolveServer: resolveServerWithContext,
   installServer,
   latestServerVersion,
   toolchainVersion,
@@ -8,6 +9,13 @@ const {
   shellcheckAsset,
   shfmtAsset,
 } = require("../lib/server");
+const resolveServer = (configuredPath, logLevel = "info", managedServer = null) =>
+  resolveServerWithContext(
+    serverContext({ rootPath: __dirname, managedServer }),
+    configuredPath,
+    logLevel,
+  );
+
 const main = require("../lib/main");
 
 const registerAdapter = () => {
@@ -190,7 +198,7 @@ describe("ide-bash adapter", () => {
   beforeEach(async () => {
     await lumine.packages.activatePackage("ide-bash");
     ({ adapter, disposable } = registerAdapter());
-    await adapter.resolveServer({ rootPath: __dirname, managedServer: null });
+    await adapter.resolveServer(serverContext({ rootPath: __dirname, managedServer: null }));
   });
 
   afterEach(async () => {
@@ -205,7 +213,7 @@ describe("ide-bash adapter", () => {
     expect(adapter.restartKeyPaths).toEqual(["ide-bash.serverPath", "ide-bash.bashIde.logLevel"]);
     expect(adapter.bundledServer).toBe(true);
     expect(adapter.managedServerDisplayName).toBe("Bash Toolchain");
-    const launch = await adapter.resolveServer({ rootPath: __dirname });
+    const launch = await adapter.resolveServer(serverContext({ rootPath: __dirname }));
     expect(launch.cwd).toBe(__dirname);
     expect(launch.transport).toBe("stdio");
   });
@@ -237,7 +245,9 @@ describe("ide-bash adapter", () => {
 
   it("prefers managed tools by default and preserves explicit paths or disablement", async () => {
     const managed = { directory: require("path").join(__dirname, "managed"), version: "1.0.0" };
-    const launch = await adapter.resolveServer({ rootPath: __dirname, managedServer: managed });
+    const launch = await adapter.resolveServer(
+      serverContext({ rootPath: __dirname, managedServer: managed }),
+    );
     let settings = adapter.getSettings({ launch }).bashIde;
     expect(settings.shellcheckPath).toBe(toolPaths(managed).shellcheck);
     expect(settings.shfmt.path).toBe(toolPaths(managed).shfmt);
@@ -251,8 +261,12 @@ describe("ide-bash adapter", () => {
 
   it("keeps tool paths with their launch across concurrent resolutions and service edges", async () => {
     const managed = { directory: require("path").join(__dirname, "managed") };
-    const installed = await adapter.resolveServer({ rootPath: __dirname, managedServer: managed });
-    const fallback = await adapter.resolveServer({ rootPath: __dirname, managedServer: null });
+    const installed = await adapter.resolveServer(
+      serverContext({ rootPath: __dirname, managedServer: managed }),
+    );
+    const fallback = await adapter.resolveServer(
+      serverContext({ rootPath: __dirname, managedServer: null }),
+    );
     const second = registerAdapter();
     try {
       expect(adapter.getSettings({ launch: installed }).bashIde.shellcheckPath).toBe(
@@ -327,4 +341,12 @@ describe("ide-bash feature contracts", () => {
       expect(lumine.config.get(keyPath)).toBe(false);
     });
   }
+});
+
+describe("ide-bash shared server resolution", () => {
+  it("preserves an unavailable selection as null", async () => {
+    const { resolveServer: resolveWithContext } = require("../lib/server");
+    const resolver = { select: jasmine.createSpy("select").and.resolveTo(null) };
+    expect(await resolveWithContext({ rootPath: __dirname, resolver }, "")).toBeNull();
+  });
 });

@@ -55,7 +55,7 @@
   "configSchema": {
     "serverPath": {
       "title": "Server Path",
-      "description": "Absolute path to a `bash-language-server` executable. Leave empty to use the bundled server.",
+      "description": "Absolute path to a server executable or JavaScript entry. Leave empty to use the bundled server.",
       "type": "string",
       "default": ""
     },
