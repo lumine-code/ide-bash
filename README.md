@@ -2,7 +2,7 @@
 
 Bash language-server adapter.
 
-Registers the maintained [@lumine-code/bash-language-server](https://github.com/lumine-code/bash-language-server) fork with the `ide-client` package, providing completion, diagnostics, navigation, and optional ShellCheck and shfmt integration for shell scripts.
+Registers the maintained [@lumine-code/bash-language-server](https://github.com/lumine-code/bash-language-server) fork with the `ide` package, providing completion, diagnostics, navigation, and optional ShellCheck and shfmt integration for shell scripts.
 
 ## Features
 
@@ -19,7 +19,7 @@ Registers the maintained [@lumine-code/bash-language-server](https://github.com/
 
 To install `ide-bash` search for it in the Install pane of the Lumine settings, or run the command `lumine --install lumine-code/ide-bash`.
 
-Install `ide-client` first. Install ShellCheck and shfmt yourself or use IDE Client's managed-server view; explicitly configured paths take precedence.
+Install `ide` first. Install ShellCheck and shfmt yourself or use IDE's managed-server view; explicitly configured paths take precedence.
 
 ## Usage
 
@@ -27,7 +27,7 @@ The managed ShellCheck and shfmt tools are used with the bundled server. A custo
 
 ## Services
 
-- `ide-client`: consumed to register the Bash adapter with the editor's language-server client.
+- `ide`: consumed to register the Bash adapter with the editor's language-server client.
 
 ## Contributing
 
