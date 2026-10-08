@@ -45,25 +45,18 @@ describe("ide-bash server resolution", () => {
     expect(fs.existsSync(launch.args[0])).toBe(true);
     expect(launch.args[1]).toBe("start");
     expect(launch.env.ELECTRON_RUN_AS_NODE).toBe("1");
-    const metadata = require("@lumine-code/bash-language-server/package.json");
-    expect(metadata.name).toBe("@lumine-code/bash-language-server");
+    const metadata = require("bash-language-server/package.json");
+    expect(metadata.name).toBe("bash-language-server");
     expect(launch.version).toBe(metadata.version);
-    expect(metadata.dependencies.editorconfig).toBe("3.0.2");
-    expect(
-      fs.existsSync(
-        require.resolve("@lumine-code/bash-language-server/server/tree-sitter-bash.wasm"),
-      ),
-    ).toBe(true);
+    expect(fs.existsSync(require.resolve("bash-language-server/tree-sitter-bash.wasm"))).toBe(true);
   });
 
   it("keeps the bundled server when a managed toolchain is installed", async () => {
     const managed = { modulePath: "/managed/cli.js", version: "9.9.9" };
     const launch = await resolveServer("", "info", managed);
     expect(launch.args[0]).not.toBe(managed.modulePath);
-    expect(launch.args[0]).toBe(
-      require.resolve("@lumine-code/bash-language-server/server/out/cli.js"),
-    );
-    expect(launch.version).toBe(require("@lumine-code/bash-language-server/package.json").version);
+    expect(launch.args[0]).toBe(require.resolve("bash-language-server/out/cli.js"));
+    expect(launch.version).toBe(require("bash-language-server/package.json").version);
     expect((await resolveServer(process.execPath, "info", managed)).command).toBe(process.execPath);
   });
 

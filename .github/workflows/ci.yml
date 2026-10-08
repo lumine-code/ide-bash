@@ -36,6 +36,8 @@ jobs:
           cache: npm
       - name: Install dependencies
         run: npm ci --ignore-scripts --no-audit
+      - name: Test dependency audit policy
+        run: node --test script/check-audit.test.js
       - name: Audit dependencies
         # The lockfile audit is platform-independent; one matrix copy is enough.
         if: matrix.os == 'macos-latest'
@@ -43,14 +45,18 @@ jobs:
         run: |
           set +e
           for attempt in 1 2 3 4 5; do
-            output="$(npm audit --audit-level=high --fetch-timeout=30000 --fetch-retries=0 2>&1)"
+            output="$(npm audit --json --audit-level=high --fetch-timeout=30000 --fetch-retries=0 2>&1)"
             status=$?
             printf '%s\n' "$output"
-            if [ "$status" -eq 0 ]; then exit 0; fi
-            if ! grep -Eqi 'audit endpoint returned an error|network timeout|EAI_AGAIN|ECONNRESET|ETIMEDOUT|429 Too Many Requests|503 Service Unavailable' <<<"$output"; then exit "$status"; fi
+            if ! grep -Eqi 'audit endpoint returned an error|network timeout|EAI_AGAIN|ECONNRESET|ETIMEDOUT|429 Too Many Requests|503 Service Unavailable' <<<"$output"; then
+              if [ "$status" -ne 0 ] && [ "$status" -ne 1 ]; then exit "$status"; fi
+              printf '%s\n' "$output" | node script/check-audit.js
+              exit "$?"
+            fi
             if [ "$attempt" -lt 5 ]; then sleep "$((attempt * 2))"; fi
           done
           printf '::warning::npm advisory endpoint remained unavailable after five attempts; dependency audit could not run.\n'
+          exit 1
       - name: Lint
         run: npm run lint
       - name: Check formatting
