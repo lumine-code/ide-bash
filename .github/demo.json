@@ -1,0 +1,16 @@
+{
+  "title": "ide-bash",
+  "description": "Bash hover information resolves a shell variable to its assigned value.",
+  "recordedOn": "2026-10-13",
+  "sourceRevision": "969acb774d2e00e7ef24c546bbf62a2f1b93416f",
+  "mode": "normal",
+  "fontSettings": "default",
+  "images": [
+    {
+      "file": "demo.png",
+      "label": "Bash hover information resolves a shell variable to its assigned value.",
+      "width": 1100,
+      "height": 490
+    }
+  ]
+}

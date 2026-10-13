@@ -15,6 +15,8 @@ Registers the upstream [bash-language-server](https://github.com/bash-lsp/bash-l
 - **Feature switches**: each capability can be handed to another language server serving the same file.
 - **Project sessions**: one server per project root, started lazily with the first shell-script editor.
 
+![Bash hover information resolves a shell variable to its assigned value.](.github/demo.png)
+
 ## Installation
 
 To install `ide-bash` search for it in the Install pane of the Lumine settings, or run the command `lumine --install lumine-code/ide-bash`.
