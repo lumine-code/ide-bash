@@ -29,8 +29,6 @@ The managed ShellCheck and shfmt tools are used with the bundled server. A custo
 
 The bundled server comes directly from an immutable upstream Git commit. Its TypeScript sources are compiled locally on first use, including when installation scripts are disabled; subsequent starts reuse that build. No fork or global compiler is required.
 
-The upstream server currently inherits [GHSA-vfj7-8cjw-p6xm](https://github.com/advisories/GHSA-vfj7-8cjw-p6xm) through fast-glob, micromatch, and braces 3.0.3. Deeply nested glob patterns can exhaust the JavaScript stack and stop the server; no patched braces release is currently available. CI prints the audit report and a warning for this specific upstream advisory, while rejecting every other high or critical root advisory and failing when an audit report cannot be obtained or validated.
-
 ## Services
 
 - `ide`: consumed to register the Bash adapter with the editor's language-server client.

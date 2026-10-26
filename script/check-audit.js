@@ -1,6 +1,5 @@
 const fs = require("node:fs");
 
-const acceptedUrl = "https://github.com/advisories/GHSA-vfj7-8cjw-p6xm";
 const severities = ["info", "low", "moderate", "high", "critical"];
 const isObject = (value) => value !== null && typeof value === "object" && !Array.isArray(value);
 const isHigh = (severity) => severity === "high" || severity === "critical";
@@ -69,32 +68,23 @@ function checkAudit(audit) {
     }
   }
 
-  const accepted = (entry) =>
-    entry.url === acceptedUrl &&
-    entry.name === "braces" &&
-    entry.dependency === "braces" &&
-    entry.severity === "high";
-  const unexpected = advisories.filter((entry) => isHigh(entry.severity) && !accepted(entry));
+  const unexpected = advisories.filter((entry) => isHigh(entry.severity));
   if (unexpected.length) {
     throw new Error(
-      `Unaccepted high or critical dependency advisories: ${[...new Set(unexpected.map(({ url }) => url))].join(", ")}`,
+      `High or critical dependency advisories: ${[...new Set(unexpected.map(({ url }) => url))].join(", ")}`,
     );
   }
-  return { accepted: advisories.some(accepted), affectedPackages: total };
+  return { affectedPackages: total };
 }
 
 if (require.main === module) {
   try {
-    const result = checkAudit(JSON.parse(fs.readFileSync(0, "utf8")));
-    console.log(
-      result.accepted
-        ? `::warning::Unpatched upstream braces advisory ${acceptedUrl} remains (${result.affectedPackages} affected packages). Only this specific advisory is temporarily accepted; it is not fixed.`
-        : "No unaccepted high or critical dependency advisories.",
-    );
+    checkAudit(JSON.parse(fs.readFileSync(0, "utf8")));
+    console.log("No high or critical dependency advisories.");
   } catch (error) {
     console.error(error.message);
     process.exitCode = 1;
   }
 }
 
-module.exports = { checkAudit, acceptedUrl };
+module.exports = { checkAudit };

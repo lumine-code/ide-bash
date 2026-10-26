@@ -2,14 +2,16 @@ const assert = require("node:assert/strict");
 const path = require("node:path");
 const { spawnSync } = require("node:child_process");
 const test = require("node:test");
-const { checkAudit, acceptedUrl } = require("./check-audit");
+const { checkAudit } = require("./check-audit");
+
+const withdrawnUrl = "https://github.com/advisories/GHSA-vfj7-8cjw-p6xm";
 
 function advisory(overrides = {}) {
   return {
     name: "braces",
     dependency: "braces",
     severity: "high",
-    url: acceptedUrl,
+    url: withdrawnUrl,
     ...overrides,
   };
 }
@@ -28,33 +30,33 @@ function report(vulnerabilities = {}) {
 }
 
 test("accepts a clean audit", () => {
-  assert.deepEqual(checkAudit(report()), { accepted: false, affectedPackages: 0 });
+  assert.deepEqual(checkAudit(report()), { affectedPackages: 0 });
 });
 
-test("accepts only the known braces leaf and its transitive affected packages", () => {
+test("rejects a high advisory even when it was previously excepted", () => {
   const audit = report({
     "bash-language-server": entry("bash-language-server", ["fast-glob"]),
     "fast-glob": entry("fast-glob", ["micromatch"]),
     micromatch: entry("micromatch", ["braces"]),
     braces: entry("braces", [advisory()]),
   });
-  assert.deepEqual(checkAudit(audit), { accepted: true, affectedPackages: 4 });
+  assert.throws(() => checkAudit(audit), /High or critical/);
 });
 
 for (const severity of ["high", "critical"]) {
-  test(`rejects a new ${severity} leaf alongside the accepted advisory`, () => {
+  test(`rejects a new ${severity} leaf alongside the withdrawn advisory`, () => {
     const audit = report({
       braces: entry("braces", [advisory(), advisory({ url: "https://example.com/new", severity })]),
     });
-    assert.throws(() => checkAudit(audit), /Unaccepted high or critical/);
+    assert.throws(() => checkAudit(audit), /High or critical/);
   });
 }
 
-test("rejects the accepted URL when it names another package or escalates to critical", () => {
+test("rejects high advisories for any package and critical advisories", () => {
   for (const overrides of [{ dependency: "other" }, { name: "other" }, { severity: "critical" }]) {
     assert.throws(
       () => checkAudit(report({ braces: entry("braces", [advisory(overrides)]) })),
-      /Unaccepted high or critical/,
+      /High or critical/,
     );
   }
 });
@@ -67,7 +69,7 @@ test("preserves the high threshold for unrelated moderate advisories", () => {
       "moderate",
     ),
   });
-  assert.equal(checkAudit(audit).accepted, false);
+  assert.deepEqual(checkAudit(audit), { affectedPackages: 1 });
 });
 
 test("rejects dangling, cyclic, unexplained, or inconsistent affected-package reports", () => {
@@ -97,14 +99,18 @@ test("fails closed on network and malformed audit reports", () => {
   }
 });
 
-test("the command warns for the accepted risk and exits unsuccessfully for invalid JSON or network errors", () => {
+test("the command fails for high advisories, invalid JSON and network errors", () => {
   const script = path.join(__dirname, "check-audit.js");
   const run = (input) =>
     spawnSync(process.execPath, [script], { input, encoding: "utf8", windowsHide: true });
-  const accepted = run(JSON.stringify(report({ braces: entry("braces", [advisory()]) })));
-  assert.equal(accepted.status, 0);
-  assert.match(accepted.stdout, /::warning::Unpatched upstream braces advisory/);
-  for (const input of ["not JSON", JSON.stringify({ error: { code: "ENOTFOUND" } })]) {
+  const clean = run(JSON.stringify(report()));
+  assert.equal(clean.status, 0);
+  assert.match(clean.stdout, /No high or critical/);
+  for (const input of [
+    JSON.stringify(report({ braces: entry("braces", [advisory()]) })),
+    "not JSON",
+    JSON.stringify({ error: { code: "ENOTFOUND" } }),
+  ]) {
     const failed = run(input);
     assert.equal(failed.status, 1);
     assert.notEqual(failed.stderr, "");
