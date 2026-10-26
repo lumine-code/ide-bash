@@ -2,11 +2,11 @@
 
 Bash language-server adapter.
 
-Registers the upstream [bash-language-server](https://github.com/bash-lsp/bash-language-server) npm package with the `ide` package, providing completion, diagnostics, navigation, and optional ShellCheck and shfmt integration for shell scripts.
+Registers a pinned upstream [bash-language-server](https://github.com/bash-lsp/bash-language-server) commit with the `ide` package, providing completion, diagnostics, navigation, and optional ShellCheck and shfmt integration for shell scripts.
 
 ## Features
 
-- **Bundled server**: ships the upstream npm server with an optional custom executable path.
+- **Bundled server**: ships the pinned upstream server with an optional custom executable path.
 - **Managed toolchain**: installs verified ShellCheck and shfmt release assets while using the upstream server bundled with the adapter; a path you set yourself always wins.
 - **Shell intelligence**: completes variables, functions, executables, builtins, keywords, options, and snippets.
 - **Workspace analysis**: follows sourced files or indexes a configurable set of scripts for cross-file symbols and navigation.
@@ -26,6 +26,8 @@ Install `ide` first. Install ShellCheck and shfmt yourself or use IDE's managed-
 ## Usage
 
 The managed ShellCheck and shfmt tools are used with the bundled server. A custom server uses explicitly configured tools or the executables on PATH, so its startup does not depend on the managed toolchain.
+
+The bundled server comes directly from an immutable upstream Git commit. Its TypeScript sources are compiled locally on first use, including when installation scripts are disabled; subsequent starts reuse that build. No fork or global compiler is required.
 
 The upstream server currently inherits [GHSA-vfj7-8cjw-p6xm](https://github.com/advisories/GHSA-vfj7-8cjw-p6xm) through fast-glob, micromatch, and braces 3.0.3. Deeply nested glob patterns can exhaust the JavaScript stack and stop the server; no patched braces release is currently available. CI prints the audit report and a warning for this specific upstream advisory, while rejecting every other high or critical root advisory and failing when an audit report cannot be obtained or validated.
 

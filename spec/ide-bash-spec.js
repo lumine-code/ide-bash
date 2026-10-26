@@ -55,7 +55,7 @@ describe("ide-bash server resolution", () => {
     const managed = { modulePath: "/managed/cli.js", version: "9.9.9" };
     const launch = await resolveServer("", "info", managed);
     expect(launch.args[0]).not.toBe(managed.modulePath);
-    expect(launch.args[0]).toBe(require.resolve("bash-language-server/out/cli.js"));
+    expect(launch.args[0]).toBe(await require("../lib/build-server").bundledServerPath());
     expect(launch.version).toBe(require("bash-language-server/package.json").version);
     expect((await resolveServer(process.execPath, "info", managed)).command).toBe(process.execPath);
   });

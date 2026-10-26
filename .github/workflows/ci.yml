@@ -38,6 +38,8 @@ jobs:
         run: npm ci --ignore-scripts --no-audit
       - name: Test dependency audit policy
         run: node --test script/check-audit.test.js
+      - name: Test pinned server preparation
+        run: node --test script/build-server.test.js
       - name: Audit dependencies
         # The lockfile audit is platform-independent; one matrix copy is enough.
         if: matrix.os == 'macos-latest'

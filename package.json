@@ -22,12 +22,14 @@
   "main": "./lib/main",
   "files": [
     "lib",
-    "spec"
+    "spec",
+    "THIRD_PARTY_NOTICES"
   ],
   "specPackages": [
     "ide"
   ],
   "scripts": {
+    "build:server": "node lib/build-server.js",
     "test": "lumine --test spec",
     "lint": "eslint . --max-warnings 0",
     "format": "prettier --write .",
@@ -41,7 +43,8 @@
     }
   },
   "dependencies": {
-    "bash-language-server": "5.8.1"
+    "bash-language-server": "github:bash-lsp/bash-language-server#93877dba36ef933c75cd93478428fe521a59586b::path:server",
+    "typescript": "^6.0.3"
   },
   "devDependencies": {
     "@eslint/js": "^10.0.1",
