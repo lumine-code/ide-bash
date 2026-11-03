@@ -29,6 +29,8 @@ The managed ShellCheck and shfmt tools are used with the bundled server. A custo
 
 The bundled server comes directly from an immutable upstream Git commit. Its TypeScript sources are compiled locally on first use, including when installation scripts are disabled; subsequent starts reuse that build. No fork or global compiler is required.
 
+See [dependency security](docs/security.md) for the tested dependency fixes and audit policy.
+
 ## Services
 
 - `ide`: consumed to register the Bash adapter with the editor's language-server client.
